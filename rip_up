@@ -55,8 +55,11 @@ rust_update() {
     local rustup_pid="${!}"
 
     # Connect pipe to stdout
-    (( verbosity > 1 )) \
-        && unbuffer cat "${rusty_pipe}"
+    if (( verbosity > 1 )); then
+        unbuffer cat "${rusty_pipe}"
+    else
+        unbuffer cat "${rusty_pipe}" > /dev/null
+    fi
 
     # Wait for rustup background process
     wait "${rustup_pid}"

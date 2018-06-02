@@ -1,4 +1,5 @@
-Update script for ripgrep and its dependencies
+# Update script for Rust nightly and ripgrep
 
-Tested with Rust nightly
+Check out the excellent [ripgrep](https://github.com/BurntSushi/ripgrep)
 
+Requires [bash_utils.sh](https://github.com/Slaiyer/bash_utils)

@@ -95,7 +95,7 @@ ripgrep_rebuild() {
 
 # Check if upstream has updates
 repo_update() { # Parameters: upstream_branch
-    log_msg 'INFO' 'Checking Git local against upstream'
+    log_msg 'INFO' 'Checking ripgrep Git local against upstream'
 
     (( verbosity > 1 )) \
         && git remote update

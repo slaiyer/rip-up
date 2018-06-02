@@ -1,0 +1,239 @@
+#!/usr/bin/env bash
+
+# Update Rust, pull changes from ripgrep upstream; rebuild, if necessary
+# Tested with Rust nightly
+
+################################################################################
+
+# Trace live execution
+#set -o xtrace
+
+# Calm down a bit
+set +o errexit
+
+# Source Bash utilities, if possible
+export bash_utils="${HOME:-/home/slaiyer}/bin/bash_utils.sh"
+# shellcheck source=/home/slaiyer/bin/bash_utils.sh
+if [[ ! -e "${bash_utils}" ]] || ! . "${bash_utils}"; then
+    printf '[ERROR] Could not source %s\n' "${bash_utils}" 1>&2
+    exit 1
+fi
+
+# Update Rust, if possible
+rust_update() {
+    log_msg 'INFO' 'Checking for updates to Rust'
+
+    # Create temporary FIFO
+    local rusty_pipe
+    if ! rusty_pipe="$(mktemp -u)" || ! mkfifo -m 600 "${rusty_pipe}"; then
+        log_msg 'ERROR' "Could not create temporary FIFO '${rusty_pipe}''"
+        exit 1
+    fi
+
+    rm_pipe() {
+        rm -f "${rusty_pipe}" \
+            || log_msg 'ERROR' 'Could not remove temporary FIFO'
+    }
+
+    # Augment existing trap
+    rmpipe_trace() {
+        rm_pipe
+        trace "${?}"
+    }
+
+    # Replace existing trap
+    trap 'rmpipe_trace' ERR
+
+    # Check if Rust is being updated
+    {
+        unbuffer rustup update \
+            | tee "${rusty_pipe}" \
+            | grep -qF 'updated'
+    } &
+
+    # Save PID for later
+    local rustup_pid="${!}"
+
+    # Connect pipe to stdout
+    (( verbosity > 1 )) \
+        && unbuffer cat "${rusty_pipe}"
+
+    # Wait for rustup background process
+    wait "${rustup_pid}"
+    rustup_retval="${?}"
+
+    # Clean up and restore original trap
+    rm_pipe
+    trap 'trace' ERR
+
+    # Return accordingly
+    return "${rustup_retval}"
+}
+
+# Pull fresh changes from ripgrep upstream, rebuild, and run tests
+ripgrep_rebuild() {
+    log_msg 'INFO' 'Pulling updates from ripgrep upstream'
+    git pull --rebase \
+        || { log_msg 'ERROR' 'Git pull failed'; exit 1; }
+
+    log_msg 'INFO' 'Building ripgrep'
+    env RUSTFLAGS='-C target-cpu=native' \
+        cargo build --release --features 'simd-accel avx-accel' \
+            || { log_msg 'ERROR' 'Cargo build failed'; exit 1; }
+
+    log_msg 'INFO' 'Testing new build'
+    cargo test --all \
+        || { log_msg 'WARN' 'Cargo test failed'; exit 1; }
+
+    log_msg 'INFO' 'Build successful' 'force'
+    ./target/release/rg --version \
+        || { log_msg 'WARN' 'Could not query ripgrep version'; exit 1; }
+}
+
+# Check if upstream has updates
+repo_update() { # Parameters: upstream_branch
+    log_msg 'INFO' 'Checking Git local against upstream'
+
+    (( verbosity > 1 )) \
+        && git remote update
+
+    local git_current_branch='@{0}'
+    local git_upstream_tracking="${1:-@{u\}}"
+    local git_local=''
+    git_local="$(git rev-parse "${git_current_branch}")"
+    local git_remote=''
+    git_remote="$(git rev-parse "${git_upstream_tracking}")"
+    local git_base=''
+    git_base="$(git merge-base \
+        "${git_current_branch}" "${git_upstream_tracking}" \
+    )"
+
+    # Check local against upstream
+    if [[ "${git_local}" != "${git_remote}" ]]; then
+        return 0
+    elif [[ "${git_local}" == "${git_remote}" ]]; then
+        log_msg 'INFO' 'Git local is same as remote'
+        return 1
+    elif [[ "${git_remote}" == "${git_base}" ]]; then
+        log_msg 'WARN' 'Git local is ahead'
+        local want_rebuild='Maybe'
+
+        #read -rp '\nRebuild? [y/N]: ' want_rebuild
+        #[[ "${want_rebuild^^}" =~ ^Y ]] &&
+        #    return 0
+        #return 1
+
+        local -a rebuild_opts=( 'Yes' 'No' )
+        printf '\nRebuild?\n'
+        select want_rebuild in "${rebuild_opts[@]}"; do
+            case "${want_rebuild}" in
+                "${rebuild_opts[0]}") return 0 ;;
+                "${rebuild_opts[1]}") return 1 ;;
+            esac
+        done
+    else
+        log_msg 'ABORT' 'Git histories have diverged'
+        exit 1
+    fi
+
+    return 1
+}
+
+# Print help message
+usage() {
+    local help_fmt="${sqo}-h${sqc}"
+    local help_msg="${d}Print this help message${n}"
+    local verb_fmt="${sqo}-v ${u}0${n}..${u}2${n}${sqc}"
+    local verb_msg="${d}Control output verbosity${n}"
+    local force_fmt="${sqo}-f${sqc}"
+    local force_msg="${d}Force ripgrep rebuild${n}"
+    local src_fmt="${sqo}-d ${i}<ripgrep_git_dir>${n}${sqc}"
+    local src_msg="${d}Specify path to ripgrep git local directory${n}"
+    local branch_fmt="${sqo}-u ${i}<upstream_branch>${n}${sqc}"
+    local branch_msg="${d}Specify ripgrep Git remote tracking branch${n}"
+    local -A prog_params=(
+        ["${help_fmt}"]="${help_msg}"
+        ["${verb_fmt}"]="${verb_msg}"
+        ["${force_fmt}"]="${force_msg}"
+        ["${src_fmt}"]="${src_msg}"
+        ["${branch_fmt}"]="${branch_msg}"
+    )
+
+    printf 'Usage:\n\t%s\n' "${b}$(basename -- "${0}")${n}" 1>&2
+
+    local text=''
+    for flag in "${!prog_params[@]}"; do
+        text="${text}${flag}|${prog_params[${flag}]}"$'\n'
+    done
+
+    printf '%s' "${text}" \
+        | column -ts '|' \
+        | sed -u 's/^/\t\t/' 1>&2
+}
+
+################################################################################
+
+# Entry point
+main() { # Parameters: [flags]
+    # Set defaults
+    local git_dir="${HOME}/git/ripgrep"
+    local upstream_branch='@{u}'
+    local reasons=0
+    verbosity=2
+
+    # Process flag arguments
+    local flag=''
+    while getopts 'd:u:fv:h' flag; do
+        case "${flag}" in
+            f)  (( ++reasons )) ;;
+            d)  git_dir="${OPTARG}" ;;
+            u)  upstream_branch="${OPTARG}" ;;
+            h)  usage; exit 0 ;;
+            v)
+                verbosity="${OPTARG}"
+                [[ ! "${verbosity}" =~ ^[0-9]$ ]] \
+                    && { usage; exit 1; }
+                ;;
+            *)  usage; exit 1 ;;
+        esac
+    done
+
+    # Move past flag arguments
+    shift "$(( OPTIND - 1 ))"
+
+    # Fail as early as possible
+    log_msg 'INFO' 'Checking prerequisites'
+    require 'unbuffer' 'rustup' 'git' 'cargo' \
+        && log_msg 'INFO' 'Requirements satisfied'
+
+    # Enter specified directory
+    cd "${git_dir}" \
+        || { log_msg 'ERROR' "Could not cd to ${git_dir}"; exit 1; }
+
+    # Navigate to ripgrep Git root directory
+    local git_dir_top
+    git_dir_top="$(git rev-parse --show-toplevel)"
+    if [[ "$(basename -- "${git_dir_top}")" != 'ripgrep' ]]; then
+        log_msg 'ERROR' "${git_dir} is not within local ripgrep Git tree"
+        exit 1
+    fi
+    cd "${git_dir_top}" \
+        || { log_msg 'ERROR' "Could not cd to ${git_dir_top}"; exit 1; }
+
+    # Try updating Rust
+    rust_update \
+        && (( ++reasons ))
+
+    # Try updating local Git clone
+    repo_update "${upstream_branch}" \
+        && (( ++reasons ))
+
+    # Try rebuilding ripgrep
+    if (( reasons > 0 )); then
+        ripgrep_rebuild
+    else
+        log_msg 'INFO' 'ripgrep rebuild not required' 'force'
+    fi
+}
+
+main "${@}"

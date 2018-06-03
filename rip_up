@@ -5,8 +5,8 @@
 
 ################################################################################
 
-# Trace live execution
-#set -o xtrace
+# # Trace live execution
+# set -o xtrace
 
 # Calm down a bit
 set +o errexit
@@ -122,10 +122,10 @@ repo_update() { # Parameters: upstream_branch
         log_msg 'WARN' 'Git local is ahead of remote'
         local want_rebuild='Maybe'
 
-        #read -rp '\nRebuild? [y/N]: ' want_rebuild
-        #[[ "${want_rebuild^^}" =~ ^Y ]] \
-        #    && return 0
-        #return 1
+        # read -rp '\nRebuild? [y/N]: ' want_rebuild
+        # [[ "${want_rebuild^^}" =~ ^Y ]] \
+        #     && return 0
+        # return 1
 
         local -a rebuild_opts=( 'Yes' 'No' )
         printf '\nRebuild?\n'

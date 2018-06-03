@@ -4,14 +4,22 @@ Check out the excellent [ripgrep](https://github.com/BurntSushi/ripgrep)
 
 Requires [bash_utils.sh](https://github.com/Slaiyer/bash_utils)
 
+## Overview:
+- Calls rustup
+- Pulls changes from ripgrep upstream
+- Rebuilds ripgrep (but only if required) with SIMD and AVX extensions
+- Runs built-in tests
+- Strips built executable
+
+## Usage:
 ```
 $ rip_up -h
 Usage:
 	rip_up
-		[-u <upstream_branch>]  Specify ripgrep Git remote tracking branch
-		[-h]                    Print this help message
-		[-f]                    Force ripgrep rebuild
-		[-v 0..2]               Control output verbosity
-		[-p]                    Do not strip executable post build step
-		[-d <ripgrep_git_dir>]  Specify path to ripgrep git local directory
+		[-h]             Print this help message
+		[-d <git_dir>]   Specify path to ripgrep git local directory
+		[-u <upstream>]  Specify ripgrep upstream, e.g. 'origin/master'
+		[-f]             Force ripgrep rebuild
+		[-v 0..2]        Control output verbosity
+		[-p]             Do not strip executable post build step
 ```

@@ -23,54 +23,22 @@ fi
 rust_update() {
     log_msg 'INFO' 'Checking for updates to Rust'
 
-    # Create temporary FIFO
-    local rusty_pipe
-    if ! rusty_pipe="$(mktemp -u)" || ! mkfifo -m 600 "${rusty_pipe}"; then
-        log_msg 'ERROR' "Could not create temporary FIFO '${rusty_pipe}'"
-        exit 1
-    fi
+    # Duplicate stdout and stderr
+    exec 3>&1
+    exec 4>&2
 
-    rm_pipe() {
-        rm -f "${rusty_pipe}" \
-            || log_msg 'ERROR' "Could not rm temporary FIFO '${rusty_pipe}'"
-    }
+    # Copy rustup output streams without grep knowing about it
+    unbuffer rustup update 1>&3 2>&4 3>&- 4>&- \
+        |& grep -q -F 'updated'
 
-    # Augment existing trap
-    rmpipe_trace() {
-        rm_pipe
-        trace "${?}"
-    }
+    # Save grep exit status
+    ret_val="${?}"
 
-    # Replace existing trap
-    trap 'rmpipe_trace' ERR
+    # Close duplicated file descriptors
+    exec 3>&-
+    exec 4>&-
 
-    # Check if Rust is being updated
-    {
-        unbuffer rustup update \
-            | tee "${rusty_pipe}" \
-            | grep -q -F 'updated'
-    } &
-
-    # Save PID for later
-    local rustup_pid="${!}"
-
-    # Connect pipe to stdout
-    if (( verbosity > 1 )); then
-        cat -u "${rusty_pipe}"
-    else
-        cat -u "${rusty_pipe}" > /dev/null
-    fi
-
-    # Wait for rustup background process
-    wait "${rustup_pid}"
-    rustup_retval="${?}"
-
-    # Clean up and restore original trap
-    rm_pipe
-    trap 'trace' ERR
-
-    # Return accordingly
-    return "${rustup_retval}"
+    return "${ret_val}"
 }
 
 # Pull fresh changes from ripgrep upstream, rebuild, and run tests

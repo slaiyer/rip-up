@@ -32,7 +32,7 @@ rust_update() {
 
     rm_pipe() {
         rm -f "${rusty_pipe}" \
-            || log_msg 'ERROR' 'Could not remove temporary FIFO'
+            || log_msg 'ERROR' "Could not rm temporary FIFO '${rusty_pipe}'"
     }
 
     # Augment existing trap

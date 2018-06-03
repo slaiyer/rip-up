@@ -127,6 +127,7 @@ repo_check() { # Parameters: upstream
         "${git_current_branch}" "${git_upstream}" \
     )"
 
+    # Largely redundant, but just in case
     [[ "${git_upstream}" == '@{u}' ]] \
         && git_upstream="$(repo_resolve_upstream "${git_upstream}")"
 

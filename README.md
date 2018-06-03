@@ -12,5 +12,6 @@ Usage:
 		[-h]                    Print this help message
 		[-f]                    Force ripgrep rebuild
 		[-v 0..2]               Control output verbosity
+		[-p]                    Do not strip executable post build step
 		[-d <ripgrep_git_dir>]  Specify path to ripgrep git local directory
 ```

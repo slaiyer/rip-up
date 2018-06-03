@@ -26,7 +26,7 @@ rust_update() {
     # Create temporary FIFO
     local rusty_pipe
     if ! rusty_pipe="$(mktemp -u)" || ! mkfifo -m 600 "${rusty_pipe}"; then
-        log_msg 'ERROR' "Could not create temporary FIFO '${rusty_pipe}''"
+        log_msg 'ERROR' "Could not create temporary FIFO '${rusty_pipe}'"
         exit 1
     fi
 
@@ -112,13 +112,14 @@ repo_update() { # Parameters: upstream_branch
     )"
 
     # Check local against upstream
-    if [[ "${git_local}" != "${git_remote}" ]]; then
+    if [[ "${git_local}" == "${git_base}" ]]; then
+        log_msg 'INFO' 'Git local is behind remote'
         return 0
     elif [[ "${git_local}" == "${git_remote}" ]]; then
         log_msg 'INFO' 'Git local is same as remote'
         return 1
     elif [[ "${git_remote}" == "${git_base}" ]]; then
-        log_msg 'WARN' 'Git local is ahead'
+        log_msg 'WARN' 'Git local is ahead of remote'
         local want_rebuild='Maybe'
 
         #read -rp '\nRebuild? [y/N]: ' want_rebuild

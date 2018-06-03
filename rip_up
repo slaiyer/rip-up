@@ -48,7 +48,7 @@ rust_update() {
     {
         unbuffer rustup update \
             | tee "${rusty_pipe}" \
-            | grep -qF 'updated'
+            | grep -q -F 'updated'
     } &
 
     # Save PID for later
@@ -74,7 +74,7 @@ rust_update() {
 }
 
 # Pull fresh changes from ripgrep upstream, rebuild, and run tests
-ripgrep_rebuild() {
+ripgrep_rebuild() { # Parameters: strip_bin
     log_msg 'INFO' 'Pulling updates from ripgrep upstream'
     git pull --rebase \
         || { log_msg 'ERROR' 'Git pull failed'; exit 1; }
@@ -88,9 +88,19 @@ ripgrep_rebuild() {
     cargo test --all \
         || { log_msg 'WARN' 'Cargo test failed'; exit 1; }
 
+    exe_path='./target/release/rg'
+
     log_msg 'INFO' 'Build successful' 'force'
-    ./target/release/rg --version \
+    "${exe_path}" --version \
         || { log_msg 'WARN' 'Could not query ripgrep version'; exit 1; }
+
+    log_msg 'INFO' 'Stripping executable'
+    [[ "${1:-strip}" == 'strip' ]] \
+        && {
+            log_msg 'INFO' "Before strip:"$'\n\t'"$(ls -lF "${exe_path}")"
+            strip -p -s "${exe_path}"
+            log_msg 'INFO' "After strip:"$'\n\t'"$(ls -lF "${exe_path}")"
+        }
 }
 
 # Check if upstream has updates
@@ -155,12 +165,15 @@ usage() {
     local src_msg="${d}Specify path to ripgrep git local directory${n}"
     local branch_fmt="${sqo}-u ${i}<upstream_branch>${n}${sqc}"
     local branch_msg="${d}Specify ripgrep Git remote tracking branch${n}"
+    local nostrip_fmt="${sqo}-p${sqc}"
+    local nostrip_msg="${d}Do not strip executable post build step${n}"
     local -A prog_params=(
         ["${help_fmt}"]="${help_msg}"
         ["${verb_fmt}"]="${verb_msg}"
         ["${force_fmt}"]="${force_msg}"
         ["${src_fmt}"]="${src_msg}"
         ["${branch_fmt}"]="${branch_msg}"
+        ["${nostrip_fmt}"]="${nostrip_msg}"
     )
 
     printf 'Usage:\n\t%s\n' "${b}$(basename -- "${0}")${n}" 1>&2
@@ -171,7 +184,7 @@ usage() {
     done
 
     printf '%s' "${text}" \
-        | column -ts '|' \
+        | column -t -s '|' \
         | sed -u 's/^/\t\t/' 1>&2
 }
 
@@ -183,21 +196,23 @@ main() { # Parameters: [flags]
     local git_dir="${HOME}/git/ripgrep"
     local upstream_branch='@{u}'
     local reasons=0
+    local strip_bin='strip'
     verbosity=2
 
     # Process flag arguments
     local flag=''
-    while getopts 'd:u:fv:h' flag; do
+    while getopts 'hv:fd:u:p' flag; do
         case "${flag}" in
-            f)  (( ++reasons )) ;;
-            d)  git_dir="${OPTARG}" ;;
-            u)  upstream_branch="${OPTARG}" ;;
             h)  usage; exit 0 ;;
             v)
                 verbosity="${OPTARG}"
                 [[ ! "${verbosity}" =~ ^[0-9]$ ]] \
                     && { usage; exit 1; }
                 ;;
+            f)  (( ++reasons )) ;;
+            d)  git_dir="${OPTARG}" ;;
+            u)  upstream_branch="${OPTARG}" ;;
+            p)  strip_bin='keep' ;;
             *)  usage; exit 1 ;;
         esac
     done
@@ -207,8 +222,8 @@ main() { # Parameters: [flags]
 
     # Fail as early as possible
     log_msg 'INFO' 'Checking prerequisites'
-    require 'date' 'basename' 'mkfifo' 'unbuffer' 'rustup' 'git' 'cargo' \
-        'column' 'sed' \
+    require 'date' 'basename' 'mkfifo' 'unbuffer' 'rustup' 'git' \
+        'cargo' 'column' 'sed' 'strip' \
             && log_msg 'INFO' 'Requirements satisfied'
 
     # Enter specified directory
@@ -235,7 +250,7 @@ main() { # Parameters: [flags]
 
     # Try rebuilding ripgrep
     if (( reasons > 0 )); then
-        ripgrep_rebuild
+        ripgrep_rebuild "${strip_bin}"
     else
         log_msg 'INFO' 'ripgrep rebuild not required' 'force'
     fi

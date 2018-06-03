@@ -207,8 +207,9 @@ main() { # Parameters: [flags]
 
     # Fail as early as possible
     log_msg 'INFO' 'Checking prerequisites'
-    require 'unbuffer' 'rustup' 'git' 'cargo' \
-        && log_msg 'INFO' 'Requirements satisfied'
+    require 'date' 'basename' 'mkfifo' 'unbuffer' 'rustup' 'git' 'cargo' \
+        'column' 'sed' \
+            && log_msg 'INFO' 'Requirements satisfied'
 
     # Enter specified directory
     cd "${git_dir}" \

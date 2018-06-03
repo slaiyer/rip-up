@@ -56,9 +56,9 @@ rust_update() {
 
     # Connect pipe to stdout
     if (( verbosity > 1 )); then
-        unbuffer cat "${rusty_pipe}"
+        cat -u "${rusty_pipe}"
     else
-        unbuffer cat "${rusty_pipe}" > /dev/null
+        cat -u "${rusty_pipe}" > /dev/null
     fi
 
     # Wait for rustup background process

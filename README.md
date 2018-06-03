@@ -5,7 +5,7 @@ Check out the excellent [ripgrep](https://github.com/BurntSushi/ripgrep)
 Requires [bash_utils.sh](https://github.com/Slaiyer/bash_utils)
 
 ```
-$ rip_up -h                                                                                                                     1326ms
+$ rip_up -h
 Usage:
 	rip_up
 		[-u <upstream_branch>]  Specify ripgrep Git remote tracking branch

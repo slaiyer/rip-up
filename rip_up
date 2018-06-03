@@ -123,8 +123,8 @@ repo_update() { # Parameters: upstream_branch
         local want_rebuild='Maybe'
 
         #read -rp '\nRebuild? [y/N]: ' want_rebuild
-        #[[ "${want_rebuild^^}" =~ ^Y ]] &&
-        #    return 0
+        #[[ "${want_rebuild^^}" =~ ^Y ]] \
+        #    && return 0
         #return 1
 
         local -a rebuild_opts=( 'Yes' 'No' )

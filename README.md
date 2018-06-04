@@ -2,7 +2,7 @@
 
 Check out the excellent [ripgrep](https://github.com/BurntSushi/ripgrep)
 
-# Dependencies
+## Dependencies
 
 - [bash_utils.sh](https://github.com/Slaiyer/bash_utils)
 

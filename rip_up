@@ -243,13 +243,9 @@ main() { # Parameters: [flags]
         && (( ++reasons ))
 
     # Try pulling from ripgrep upstream, if required
-    if [[ "${force_rebuild}" != 'force' ]]; then
-        repo_check "${upstream}" \
+    [[ "${force_rebuild}" != 'force' ]] \
+        && repo_check "${upstream}" \
             && (( ++reasons ))
-    else
-        repo_pull_rebase "${upstream}" \
-            && (( ++reasons ))
-    fi
 
     # Try rebuilding ripgrep
     if (( reasons > 0 )); then

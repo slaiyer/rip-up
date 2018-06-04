@@ -2,16 +2,18 @@
 
 Check out the excellent [ripgrep](https://github.com/BurntSushi/ripgrep)
 
-Requires [bash_utils.sh](https://github.com/Slaiyer/bash_utils)
+# Dependencies
 
-## Overview:
+- [bash_utils.sh](https://github.com/Slaiyer/bash_utils)
+
+## Overview
 - Calls rustup
 - Pulls changes from ripgrep upstream
 - Rebuilds ripgrep (but only if required) with SIMD and AVX extensions
 - Runs built-in tests
 - Strips built executable
 
-## Usage:
+## Usage
 ```
 $ rip_up -h
 Usage:

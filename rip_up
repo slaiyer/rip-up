@@ -205,13 +205,6 @@ repo_resolve_upstream() { # Parameters: upstream
 
 # Entry point
 main() { # Parameters: [flags]
-    # Bash version check
-    (( "${BASH_VERSION:0:1}" < 4 )) \
-        && {
-            log_msg 'ERROR' 'Minimum Bash version 4.x required'
-            exit 1
-        }
-
     # Set defaults
     local git_dir="${HOME}/git/ripgrep"
     local upstream='@{u}'
@@ -219,7 +212,7 @@ main() { # Parameters: [flags]
     local strip_bin='strip'
     verbosity=2
 
-    # Process flag arguments
+    # Process flag arguments first in case help is sought
     local flag=''
     while getopts 'hv:fd:u:p' flag; do
         case "${flag}" in
@@ -242,6 +235,15 @@ main() { # Parameters: [flags]
 
     # Fail as early as possible
     log_msg 'INFO' 'Checking prerequisites'
+
+    # Bash version check
+    (( "${BASH_VERSION:0:1}" < 4 )) \
+        && {
+            log_msg 'ERROR' 'Minimum Bash version 4.x required'
+            exit 1
+        }
+
+    # Check for presence of folling executables in PATH
     require 'date' 'basename' 'unbuffer' 'rustup' 'git' 'cargo' \
         'column' 'sed' 'strip' \
             && log_msg 'INFO' 'Requirements satisfied'

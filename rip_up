@@ -21,18 +21,26 @@ fi
 
 # Print help message
 usage() {
+    local -a order
     local help_fmt="${sqo}-h${sqc}"
     local help_msg="${d}Print this help message${n}"
+    order+=( "${help_fmt}" )
     local verb_fmt="${sqo}-v ${u}0${n}..${u}2${n}${sqc}"
     local verb_msg="${d}Control output verbosity${n}"
+    order+=( "${verb_fmt}" )
     local force_fmt="${sqo}-f${sqc}"
     local force_msg="${d}Force ripgrep rebuild${n}"
+    order+=( "${force_fmt}" )
     local src_fmt="${sqo}-d ${i}<git_dir>${n}${sqc}"
     local src_msg="${d}Specify path to ripgrep git local directory${n}"
+    order+=( "${src_fmt}" )
     local upstream_fmt="${sqo}-u ${i}<upstream>${n}${sqc}"
     local upstream_msg="${d}Specify ripgrep upstream, e.g. 'origin/master'${n}"
+    order+=( "${upstream_fmt}" )
     local nostrip_fmt="${sqo}-p${sqc}"
     local nostrip_msg="${d}Do not strip executable post build step${n}"
+    order+=( "${nostrip_fmt}" )
+
     local -A prog_params=(
         ["${help_fmt}"]="${help_msg}"
         ["${verb_fmt}"]="${verb_msg}"
@@ -45,8 +53,10 @@ usage() {
     printf 'Usage:\n\t%s\n' "${b}$(basename -- "${0}")${n}" 1>&2
 
     local text=''
-    for flag in "${!prog_params[@]}"; do
-        text="${text}${flag}|${prog_params[${flag}]}"$'\n'
+    local key=''
+    for flag in "${!order[@]}"; do
+        key="${order["${flag}"]}"
+        text="${text}${key}|${prog_params[${key}]}"$'\n'
     done
 
     printf '%s' "${text}" \

@@ -15,10 +15,10 @@ $ rip_up -h
 Usage:
 	rip_up
 		[-h]             Print this help message
+		[-v 0..2]        Control output verbosity
+		[-f]             Force ripgrep rebuild
 		[-d <git_dir>]   Specify path to ripgrep git local directory
 		[-u <upstream>]  Specify ripgrep upstream, e.g. 'origin/master'
-		[-f]             Force ripgrep rebuild
-		[-v 0..2]        Control output verbosity
 		[-p]             Do not strip executable post build step
 ```
 

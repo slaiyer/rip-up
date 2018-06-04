@@ -104,12 +104,15 @@ ripgrep_rebuild() { # Parameters: strip_bin
 # Pull and rebase from upstream
 repo_pull_rebase() { # Parameters: upstream
     log_msg 'INFO' 'Pulling updates from ripgrep upstream'
-    local -a upstream
+
     # Change 'upstream/branch' to 'upstream branch'
     #     and tokenize into array elements
+    local upstream="${1:-origin/master}"
+    local -a upstream_split
     # shellcheck disable=SC2086
-    read -r -a upstream <<< ${1/\// }
-    git pull "${upstream[@]}" --rebase \
+    read -r -a upstream_split <<< ${upstream/\// }
+
+    git pull "${upstream_split[@]}" --rebase \
         || { log_msg 'ERROR' 'Git pull failed'; exit 1; }
 }
 

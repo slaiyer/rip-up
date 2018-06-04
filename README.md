@@ -2,15 +2,6 @@
 
 Check out the excellent [ripgrep](https://github.com/BurntSushi/ripgrep)
 
-## Dependencies
-
-- [bash_utils.sh](https://github.com/Slaiyer/bash_utils)
-- unbuffer (from the package expect)
-- git
-- Rust nightly CLI
-    - rustup
-	- cargo
-
 ## Overview
 - Calls rustup
 - Pulls changes from ripgrep upstream
@@ -30,3 +21,24 @@ Usage:
 		[-v 0..2]        Control output verbosity
 		[-p]             Do not strip executable post build step
 ```
+
+## Dependencies
+
+- bash (version 4.4+)
+- [bash_utils.sh](https://github.com/Slaiyer/bash_utils)
+- Rust nightly CLI
+    - rustup
+    - cargo
+- git
+- grep
+- sed
+- expect package
+    - unbuffer
+- coreutils package
+    - env
+    - basename
+    - tee
+- bsdmainutils package
+    - column
+- binutils package
+    - strip

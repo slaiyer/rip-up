@@ -207,8 +207,8 @@ main() { # Parameters: [flags]
 
     # Fail as early as possible
     log_msg 'INFO' 'Checking prerequisites'
-    require 'date' 'basename' 'mkfifo' 'unbuffer' 'rustup' 'git' \
-        'cargo' 'column' 'sed' 'strip' \
+    require 'date' 'basename' 'unbuffer' 'rustup' 'git' 'cargo' \
+        'column' 'sed' 'strip' \
             && log_msg 'INFO' 'Requirements satisfied'
 
     # Enter specified directory

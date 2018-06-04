@@ -5,6 +5,11 @@ Check out the excellent [ripgrep](https://github.com/BurntSushi/ripgrep)
 ## Dependencies
 
 - [bash_utils.sh](https://github.com/Slaiyer/bash_utils)
+- unbuffer (from the package expect)
+- git
+- Rust nightly CLI
+    - rustup
+	- cargo
 
 ## Overview
 - Calls rustup

@@ -94,6 +94,7 @@ rust_update() {
         fi
     done
 
+    # Return success by default
     return 0
 }
 

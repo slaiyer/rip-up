@@ -54,8 +54,8 @@ usage() {
 
     local text=''
     local key=''
-    for flag in "${!order[@]}"; do
-        key="${order["${flag}"]}"
+    for idx in "${!order[@]}"; do
+        key="${order["${idx}"]}"
         text="${text}${key}|${prog_params[${key}]}"$'\n'
     done
 
@@ -74,15 +74,27 @@ rust_update() {
     # Copy rustup output to stdout before piping to grep
     unbuffer rustup update 2>&1 \
         | tee /dev/fd/3 \
-        | grep -q -F 'updated' 3>&-
+        | grep -q -F 'updated'
 
-    # Save grep exit status
-    local ret_val="${?}"
+    # Save pipe status codes
+    local -a pipe_status=( "${PIPESTATUS[@]}" )
 
     # Close duplicated file descriptor
     exec 3>&-
 
-    return "${ret_val}"
+    # Return failure if any command in the pipeline failed
+    local code=1
+    for idx in "${!pipe_status[@]}"; do
+        code="${pipe_status[idx]}"
+        if (( "${code}" != 0 )); then
+            log_msg \
+                'INFO' \
+                "rustup pipeline command #$(( idx + 1 )) exited with ${code}"
+            return "${code}"
+        fi
+    done
+
+    return 0
 }
 
 # Pull fresh changes from ripgrep upstream, rebuild, and run tests

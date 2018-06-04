@@ -60,18 +60,17 @@ rust_update() {
 
     # Duplicate stdout and stderr
     exec 3>&1
-    exec 4>&2
 
-    # Copy rustup output streams without grep knowing about it
-    unbuffer rustup update 1>&3 2>&4 3>&- 4>&- \
-        |& grep -q -F 'updated'
+    # Copy rustup output to stdout before piping to grep
+    unbuffer rustup update 2>&1 \
+        | tee /dev/fd/3 \
+        | grep -q -F 'updated' 3>&-
 
     # Save grep exit status
     local ret_val="${?}"
 
     # Close duplicated file descriptors
     exec 3>&-
-    exec 4>&-
 
     return "${ret_val}"
 }

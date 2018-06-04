@@ -205,6 +205,13 @@ repo_resolve_upstream() { # Parameters: upstream
 
 # Entry point
 main() { # Parameters: [flags]
+    # Bash version check
+    (( "${BASH_VERSION:0:1}" < 4 )) \
+        && {
+            log_msg 'ERROR' 'Minimum Bash version 4.x required'
+            exit 1
+        }
+
     # Set defaults
     local git_dir="${HOME}/git/ripgrep"
     local upstream='@{u}'

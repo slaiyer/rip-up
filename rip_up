@@ -25,7 +25,7 @@ usage() {
     local help_fmt="${sqo}-h${sqc}"
     local help_msg="${d}Print this help message${n}"
     order+=( "${help_fmt}" )
-    local verb_fmt="${sqo}-v ${u}0${n}..${u}2${n}${sqc}"
+    local verb_fmt="${sqo}-v 0..${u}2${n}${sqc}"
     local verb_msg="${d}Control output verbosity${n}"
     order+=( "${verb_fmt}" )
     local force_fmt="${sqo}-f${sqc}"

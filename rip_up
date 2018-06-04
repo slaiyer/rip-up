@@ -237,11 +237,11 @@ main() { # Parameters: [flags]
     log_msg 'INFO' 'Checking prerequisites'
 
     # Bash version check
-    (( "${BASH_VERSION:0:1}" < 4 || "${BASH_VERSION:2:1}" < 4 )) \
-        && {
+    if [[ -z "${BASH_VERSION}" ]] \
+        || (( "${BASH_VERSION:0:1}" < 4 || "${BASH_VERSION:2:1}" < 4 )); then
             log_msg 'ERROR' 'Minimum Bash version 4.4 required'
             exit 1
-        }
+    fi
 
     # Check for presence of folling executables in PATH
     require 'date' 'basename' 'unbuffer' 'rustup' 'git' 'cargo' \

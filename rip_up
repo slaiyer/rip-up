@@ -67,7 +67,7 @@ rust_update() {
         |& grep -q -F 'updated'
 
     # Save grep exit status
-    ret_val="${?}"
+    local ret_val="${?}"
 
     # Close duplicated file descriptors
     exec 3>&-
@@ -87,9 +87,8 @@ ripgrep_rebuild() { # Parameters: strip_bin
     cargo test --all \
         || { log_msg 'WARN' 'Cargo test failed'; exit 1; }
 
-    exe_path='./target/release/rg'
-
     log_msg 'INFO' 'Build successful' 'force'
+    local exe_path='./target/release/rg'
     "${exe_path}" --version \
         || { log_msg 'WARN' 'Could not query ripgrep version'; exit 1; }
 

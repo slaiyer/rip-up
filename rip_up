@@ -12,7 +12,9 @@
 set +o errexit
 
 # Source Bash utilities, if possible
-export bash_utils="${HOME:=/home/slaiyer}/bin/bash_utils.sh"
+[[ -z "${HOME}" ]] \
+    && { "${HOME:?}"; exit 1; }
+declare -gx bash_utils="${HOME}/bin/bash_utils.sh"
 # shellcheck source=/home/slaiyer/bin/bash_utils.sh
 if [[ ! -e "${bash_utils}" ]] || ! . "${bash_utils}"; then
     printf '[ERROR] Could not source %s\n' "${bash_utils}" 1>&2
@@ -22,26 +24,26 @@ fi
 # Print help message
 usage() {
     local -a order
-    local help_fmt="${sqo}-h${sqc}"
-    local help_msg="${d}Print this help message${n}"
+    local -r help_fmt="${sqo}-h${sqc}"
+    local -r help_msg="${d}Print this help message${n}"
     order+=( "${help_fmt}" )
-    local verb_fmt="${sqo}-v 0..${u}2${n}${sqc}"
-    local verb_msg="${d}Control output verbosity${n}"
+    local -r verb_fmt="${sqo}-v 0..${u}2${n}${sqc}"
+    local -r verb_msg="${d}Control output verbosity${n}"
     order+=( "${verb_fmt}" )
-    local force_fmt="${sqo}-f${sqc}"
-    local force_msg="${d}Force ripgrep rebuild${n}"
+    local -r force_fmt="${sqo}-f${sqc}"
+    local -r force_msg="${d}Force ripgrep rebuild${n}"
     order+=( "${force_fmt}" )
-    local src_fmt="${sqo}-d ${i}<git_dir>${n}${sqc}"
-    local src_msg="${d}Specify path to ripgrep git local directory${n}"
+    local -r src_fmt="${sqo}-d ${i}<git_dir>${n}${sqc}"
+    local -r src_msg="${d}Specify path to ripgrep git local directory${n}"
     order+=( "${src_fmt}" )
-    local upstream_fmt="${sqo}-u ${i}<upstream>${n}${sqc}"
-    local upstream_msg="${d}Specify ripgrep upstream, e.g. 'origin/master'${n}"
+    local -r upstream_fmt="${sqo}-u ${i}<upstream>${n}${sqc}"
+    local -r upstream_msg="${d}Specify ripgrep upstream, e.g. 'origin/master'${n}"
     order+=( "${upstream_fmt}" )
-    local nostrip_fmt="${sqo}-p${sqc}"
-    local nostrip_msg="${d}Do not strip executable post build step${n}"
+    local -r nostrip_fmt="${sqo}-p${sqc}"
+    local -r nostrip_msg="${d}Do not strip executable post build step${n}"
     order+=( "${nostrip_fmt}" )
 
-    local -A prog_params=(
+    local -Ar prog_params=(
         ["${help_fmt}"]="${help_msg}"
         ["${verb_fmt}"]="${verb_msg}"
         ["${force_fmt}"]="${force_msg}"
@@ -77,13 +79,13 @@ rust_update() {
         | grep -q -F 'updated'
 
     # Save pipe status codes
-    local -a pipe_status=( "${PIPESTATUS[@]}" )
+    local -ar pipe_status=( "${PIPESTATUS[@]}" )
 
     # Close duplicated file descriptor
     exec 3>&-
 
     # Return failure if any command in the pipeline failed
-    local code=1
+    local -i code=1
     for idx in "${!pipe_status[@]}"; do
         code="${pipe_status[idx]}"
         if (( "${code}" != 0 )); then
@@ -110,17 +112,17 @@ ripgrep_rebuild() { # Parameters: strip_bin
         || { log_msg 'WARN' 'Cargo test failed'; exit 1; }
 
     log_msg 'INFO' 'Build successful' 'force'
-    local exe_path='./target/release/rg'
+    local -r exe_path='./target/release/rg'
     "${exe_path}" --version \
         || { log_msg 'WARN' 'Could not query ripgrep version'; exit 1; }
 
     log_msg 'INFO' 'Stripping executable'
-    local strip_bin="${1:-strip}"
+    local -r strip_bin="${1:-strip}"
     [[ "${strip_bin}" == 'strip' ]] \
         && {
-            log_msg 'INFO' "Before strip:"$'\n\t'"$(ls -lF "${exe_path}")"
+            log_msg 'INFO' "Before:"$'\n\t'"$(ls -lF "${exe_path}")"
             strip -p -s "${exe_path}"
-            log_msg 'INFO' "After strip:"$'\n\t'"$(ls -lF "${exe_path}")"
+            log_msg 'INFO' "After:"$'\n\t'"$(ls -lF "${exe_path}")"
         }
 }
 
@@ -130,7 +132,7 @@ repo_pull_rebase() { # Parameters: upstream
 
     # Change 'upstream/branch' to 'upstream branch'
     #     and tokenize into array elements
-    local upstream="${1:-origin/master}"
+    local -r upstream="${1:-origin/master}"
     local -a upstream_split
     # shellcheck disable=SC2086
     read -r -a upstream_split <<< ${upstream/\// }
@@ -143,8 +145,8 @@ repo_pull_rebase() { # Parameters: upstream
 repo_check() { # Parameters: upstream
     log_msg 'INFO' 'Checking ripgrep Git local against upstream'
 
-    local git_current_branch='@{0}'
-    local git_upstream="${1:-@{u\}}"
+    local -r git_current_branch='@{0}'
+    local -r git_upstream="${1:-@{u\}}"
     local git_local=''
     git_local="$(git rev-parse "${git_current_branch}")"
     local git_remote=''
@@ -158,7 +160,7 @@ repo_check() { # Parameters: upstream
     [[ "${git_upstream}" == '@{u}' ]] \
         && git_upstream="$(repo_resolve_upstream "${git_upstream}")"
 
-    # Check local against upstream
+    # Check Git local against upstream
     if [[ "${git_local}" == "${git_remote}" ]]; then
         log_msg 'INFO' 'Git local is same as remote'
         return 1
@@ -211,7 +213,7 @@ main() { # Parameters: [flags]
     local upstream='@{u}'
     local force_rebuild='reasons'
     local strip_bin='strip'
-    verbosity=2
+    declare -gxi verbosity=2
 
     # Process flag arguments first in case help is sought
     local flag=''
@@ -263,7 +265,7 @@ main() { # Parameters: [flags]
     cd "${git_dir_top}" \
         || { log_msg 'ERROR' "Could not cd to ${git_dir_top}"; exit 1; }
 
-    local reasons=0
+    local -i reasons=0
     [[ "${force_rebuild}" == 'force' ]] \
         && (( ++reasons ))
 

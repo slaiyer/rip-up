@@ -11,9 +11,9 @@ Check out the excellent [ripgrep](https://github.com/BurntSushi/ripgrep)
 
 ## Usage
 ```
-$ rip_up -h
+$ rip-up -h
 Usage:
-	rip_up
+	rip-up
 		[-h]             Print this help message
 		[-v 0..2]        Control output verbosity
 		[-f]             Force ripgrep rebuild

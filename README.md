@@ -27,7 +27,7 @@ Usage:
 ## Dependencies
 
 - bash (version 4.4+)
-- [bash_utils.sh](https://github.com/Slaiyer/bash_utils)
+- [bash_utils.sh](https://gitlab.com/slaiyer/bash_utils)
 - Rust nightly CLI
     - rustup
     - cargo

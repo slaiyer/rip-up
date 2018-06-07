@@ -9,6 +9,12 @@ Check out the excellent [ripgrep](https://github.com/BurntSushi/ripgrep)
 - Runs built-in tests
 - Strips built executable
 
+# Installation
+- Clone repository
+- Ensure directory ~/bin exists
+- Ensure ~/bin is in PATH
+- Link rip-up and bash_utils.sh inside ~/bin
+
 ## Usage
 ```
 $ rip-up -h

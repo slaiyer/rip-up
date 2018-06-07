@@ -14,12 +14,14 @@ set +o errexit
 # Source Bash utilities, if possible
 [[ -z "${HOME}" ]] \
     && { "${HOME:?}"; exit 1; }
-declare -gx bash_utils="${HOME}/bin/bash_utils.sh"
+declare -rx bash_utils="${HOME}/bin/bash_utils.sh"
 # shellcheck source=/home/slaiyer/bin/bash_utils.sh
 if [[ ! -e "${bash_utils}" ]] || ! . "${bash_utils}"; then
     printf '[ERROR] Could not source %s\n' "${bash_utils}" 1>&2
     exit 1
 fi
+
+################################################################################
 
 # Print help message
 usage() {
@@ -34,14 +36,15 @@ usage() {
     local -r force_msg="${d}Force ripgrep rebuild${n}"
     order+=( "${force_fmt}" )
     local -r src_fmt="${sqo}-d ${i}<git_dir>${n}${sqc}"
-    local -r src_msg="${d}Specify path to ripgrep git local directory${n}"
+    local -r src_msg="${d}Specify path to Git local directory${n}"
     order+=( "${src_fmt}" )
     local -r upstream_fmt="${sqo}-u ${i}<upstream>${n}${sqc}"
-    local -r upstream_msg="${d}Specify ripgrep upstream, e.g. 'origin/master'${n}"
+    local -r upstream_msg="${d}Specify Git upstream, e.g. 'origin/master'${n}"
     order+=( "${upstream_fmt}" )
     local -r nostrip_fmt="${sqo}-p${sqc}"
     local -r nostrip_msg="${d}Do not strip executable post build step${n}"
     order+=( "${nostrip_fmt}" )
+    local -r order
 
     local -Ar prog_params=(
         ["${help_fmt}"]="${help_msg}"
@@ -52,7 +55,8 @@ usage() {
         ["${nostrip_fmt}"]="${nostrip_msg}"
     )
 
-    printf 'Usage:\n\t%s\n' "${b}$(basename -- "${0}")${n}" 1>&2
+    printf '%s\n\n' "Update toolchain and build ${b}ripgrep${n} from source"
+    printf 'Usage:\n\t%s\n' "${b}$(basename -- "${0}")${n}"
 
     local text=''
     local key=''
@@ -60,6 +64,8 @@ usage() {
         key="${order["${idx}"]}"
         text="${text}${key}|${prog_params[${key}]}"$'\n'
     done
+    unset -v idx
+    local -r text
 
     printf '%s' "${text}" \
         | column -t -s '|' \
@@ -68,7 +74,7 @@ usage() {
 
 # Update Rust, if possible
 rust_update() {
-    log_msg 'INFO' 'Checking for updates to Rust'
+    log 'INFO' 'Checking for updates to Rust'
 
     # Duplicate stdout
     exec 3>&1
@@ -89,46 +95,53 @@ rust_update() {
     for idx in "${!pipe_status[@]}"; do
         code="${pipe_status[idx]}"
         if (( "${code}" != 0 )); then
-            log_msg \
+            log \
                 'INFO' \
                 "rustup pipeline command #$(( idx + 1 )) exited with ${code}"
             return "${code}"
         fi
     done
+    unset -v idx
 
     # Return success by default
     return 0
 }
 
+# List ripgrep executable file information
+show_exe() { # Parameters: exe_path
+    local -r exe_path="${1:-}"
+    unbuffer ls -lF --color=always "${exe_path}" \
+        || log 'WARN' "Could not list ${exe_path} on filesystem"
+}
+
 # Pull fresh changes from ripgrep upstream, rebuild, and run tests
-ripgrep_rebuild() { # Parameters: strip_bin
-    log_msg 'INFO' 'Building ripgrep'
+ripgrep_rebuild() { # Parameters: exe_path, strip_bin
+    local -r exe_path="${1:-}"
+
+    log 'INFO' 'Building ripgrep'
     env RUSTFLAGS='-C target-cpu=native' \
         cargo build --release --features 'simd-accel avx-accel' \
-            || { log_msg 'ERROR' 'Cargo build failed'; exit 1; }
+            || { log 'ERROR' 'Cargo build failed'; exit 1; }
 
-    log_msg 'INFO' 'Testing new build'
+    log 'INFO' 'Testing new build'
     cargo test --all \
-        || { log_msg 'WARN' 'Cargo test failed'; exit 1; }
+        || { log 'WARN' 'Cargo test failed'; exit 1; }
 
-    log_msg 'INFO' 'Build successful' 'force'
-    local -r exe_path='./target/release/rg'
-    "${exe_path}" --version \
-        || { log_msg 'WARN' 'Could not query ripgrep version'; exit 1; }
+    log 'INFO' 'Build successful' 'force'
 
-    log_msg 'INFO' 'Stripping executable'
-    local -r strip_bin="${1:-strip}"
+    log 'INFO' 'Stripping executable'
+    local -r strip_bin="${2:-strip}"
     [[ "${strip_bin}" == 'strip' ]] \
         && {
-            log_msg 'INFO' "Before:"$'\n\t'"$(ls -lF "${exe_path}")"
+            log 'INFO' "Before:"$'\n'"$(show_exe "${exe_path}")"
             strip -p -s "${exe_path}"
-            log_msg 'INFO' "After:"$'\n\t'"$(ls -lF "${exe_path}")"
+            log 'INFO' "After:"$'\n'"$(show_exe "${exe_path}")"
         }
 }
 
 # Pull and rebase from upstream
 repo_pull_rebase() { # Parameters: upstream
-    log_msg 'INFO' 'Pulling updates from ripgrep upstream'
+    log 'INFO' 'Pulling updates from ripgrep upstream'
 
     # Change 'upstream/branch' to 'upstream branch'
     #     and tokenize into array elements
@@ -136,44 +149,49 @@ repo_pull_rebase() { # Parameters: upstream
     local -a upstream_split
     # shellcheck disable=SC2086
     read -r -a upstream_split <<< ${upstream/\// }
+    local -r upstream_split
 
     git pull "${upstream_split[@]}" --rebase \
-        || { log_msg 'ERROR' 'Git pull failed'; exit 1; }
+        || { log 'ERROR' 'Git pull failed'; exit 1; }
 }
 
 # Check if upstream has changes
 repo_check() { # Parameters: upstream
-    log_msg 'INFO' 'Checking ripgrep Git local against upstream'
+    log 'INFO' 'Checking ripgrep Git local against upstream'
 
     local -r git_current_branch='@{0}'
-    local -r git_upstream="${1:-@{u\}}"
+    local git_upstream="${1:-@{u\}}"
     local git_local=''
     git_local="$(git rev-parse "${git_current_branch}")"
+    local -r git_local
     local git_remote=''
     git_remote="$(git rev-parse "${git_upstream}")"
+    local -r git_remote
     local git_base=''
     git_base="$(git merge-base \
         "${git_current_branch}" "${git_upstream}" \
     )"
+    local -r git_base
 
     # Largely redundant, but just in case
     [[ "${git_upstream}" == '@{u}' ]] \
         && git_upstream="$(repo_resolve_upstream "${git_upstream}")"
+    local -r git_upstream
 
     # Check Git local against upstream
     if [[ "${git_local}" == "${git_remote}" ]]; then
-        log_msg 'INFO' 'Git local is same as remote'
+        log 'INFO' 'Git local is same as remote'
         return 1
     elif [[ "${git_local}" == "${git_base}" ]]; then
-        log_msg 'INFO' 'Git local is behind remote'
+        log 'INFO' 'Git local is behind remote'
         repo_pull_rebase "${git_upstream}" \
             && return 0
     elif [[ "${git_remote}" == "${git_base}" ]]; then
-        log_msg 'WARN' 'Git local is ahead of remote'
+        log 'WARN' 'Git local is ahead of remote'
 
         # Leave choice with user
         local want_rebuild='Maybe'
-        local -a rebuild_opts=( 'Yes' 'No' )
+        local -ar rebuild_opts=( 'Yes' 'No' )
         printf '\nRebuild?\n'
         select want_rebuild in "${rebuild_opts[@]}"; do
             case "${want_rebuild}" in
@@ -184,8 +202,9 @@ repo_check() { # Parameters: upstream
                 "${rebuild_opts[1]}") return 1 ;;
             esac
         done
+        unset -v want_rebuild
     else
-        log_msg 'ABORT' 'Git histories have diverged'
+        log 'ABORT' 'Git histories have diverged'
         exit 1
     fi
 
@@ -200,6 +219,7 @@ repo_resolve_upstream() { # Parameters: upstream
                 git for-each-ref --format='%(upstream:short)' \
                     "$(git symbolic-ref -q HEAD)"
             )"
+    local -r upstream
 
     printf '%s' "${upstream}"
 }
@@ -211,87 +231,126 @@ main() { # Parameters: [flags]
     # Set defaults
     local git_dir="${HOME}/git/ripgrep"
     local upstream='@{u}'
-    local force_rebuild='reasons'
+    local force_build='reasons'
     local strip_bin='strip'
-    declare -gxi verbosity=2
+    declare -ix verbosity=2
 
     # Process flag arguments first in case help is sought
     local flag=''
     while getopts 'hv:fd:u:p' flag; do
         case "${flag}" in
-            h)  usage; exit 0 ;;
+            h)
+                usage
+                exit 0
+                ;;
             v)
                 verbosity="${OPTARG}"
                 [[ ! "${verbosity}" =~ ^[0-9]$ ]] \
                     && { usage; exit 1; }
                 ;;
-            f)  force_rebuild='force' ;;
-            d)  git_dir="${OPTARG}" ;;
-            u)  upstream="${OPTARG}" ;;
-            p)  strip_bin='keep' ;;
-            *)  usage; exit 1 ;;
+            f)
+                force_build='force'
+                ;;
+            d)
+                git_dir="${OPTARG}"
+                local -r git_dir
+                ;;
+            u)
+                upstream="${OPTARG}"
+                ;;
+            p)
+                strip_bin='keep'
+                local -r strip_bin
+                ;;
+            *)
+                usage
+                exit 1
+                ;;
         esac
     done
+    unset -v flag
 
     # Move past flag arguments
     shift "$(( OPTIND - 1 ))"
 
     # Fail as early as possible
-    log_msg 'INFO' 'Checking prerequisites'
+    log 'INFO' 'Checking prerequisites'
 
     # Bash version check
     if [[ -z "${BASH_VERSION}" ]] \
         || (( "${BASH_VERSION:0:1}" < 4 || "${BASH_VERSION:2:1}" < 4 )); then
-            log_msg 'ERROR' 'Minimum Bash version 4.4 required'
+            log 'ERROR' 'Minimum Bash version 4.4 required'
             exit 1
     fi
 
     # Check for presence of folling executables in PATH
     require 'date' 'basename' 'unbuffer' 'rustup' 'git' 'cargo' \
         'column' 'sed' 'strip' \
-            && log_msg 'INFO' 'Requirements satisfied'
+            && log 'INFO' 'Requirements satisfied'
 
     # Enter specified directory
     cd "${git_dir}" \
-        || { log_msg 'ERROR' "Could not cd to ${git_dir}"; exit 1; }
+        || { log 'ERROR' "Could not cd to ${git_dir}"; exit 1; }
 
     # Navigate to ripgrep Git root directory
     local git_dir_top
     git_dir_top="$(git rev-parse --show-toplevel)"
+    local -r git_dir_top
+
     if [[ "$(basename -- "${git_dir_top}")" != 'ripgrep' ]]; then
-        log_msg 'ERROR' "${git_dir} is not within local ripgrep Git tree"
+        log 'ERROR' "${git_dir} is not within local ripgrep Git tree"
         exit 1
     fi
     cd "${git_dir_top}" \
-        || { log_msg 'ERROR' "Could not cd to ${git_dir_top}"; exit 1; }
+        || { log 'ERROR' "Could not cd to ${git_dir_top}"; exit 1; }
+    local -r exe_path="${git_dir_top}/target/release/rg"
+
+    # Invoke ripgrep exectuable for version information
+    exe_version() {
+        "${exe_path}" --version \
+            || { log 'WARN' 'Could not query executable version'; }
+    }
+
+    # Force rebuild if ripgrep executable does not exist in default location
+    if [[ ! -f "${exe_path}" ]]; then
+        force_build='force'
+    else
+        log 'INFO' 'Existing executable'
+        exe_version "${exe_path}"
+    fi
 
     local -i reasons=0
-    [[ "${force_rebuild}" == 'force' ]] \
+
+    [[ "${force_build}" == 'force' ]] \
         && (( ++reasons ))
 
     # Get ripgrep remote status
-    log_msg 'INFO' 'Checking with ripgrep remote for changes'
+    log 'INFO' 'Checking with ripgrep remote for changes'
     (( verbosity > 1 )) \
         && git remote update
 
     # Get upstream tracking name
     [[ "${upstream}" == '@{u}' ]] \
         && upstream="$(repo_resolve_upstream "${upstream}")"
+    local -r upstream
 
     # Try updating Rust
     rust_update \
         && (( ++reasons ))
 
     # Try pulling from ripgrep upstream, if required
-    [[ "${force_rebuild}" != 'force' ]] \
+    [[ "${force_build}" != 'force' ]] \
         && repo_check "${upstream}" \
             && (( ++reasons ))
 
     # Try rebuilding ripgrep
     if (( reasons > 0 )); then
-        ripgrep_rebuild "${strip_bin}"
+        ripgrep_rebuild "${exe_path}" "${strip_bin}"
+
+        log 'INFO' 'Built executable'
+        exe_version "${exe_path}"
     else
-        log_msg 'INFO' 'ripgrep rebuild not required' 'force'
+        log 'INFO' 'ripgrep rebuild not required' 'force'
     fi
 }
 

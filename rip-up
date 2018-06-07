@@ -308,9 +308,9 @@ main() { # Parameters: [flags]
     # Compute ripgrep executable checksum and print build information
     exe_version() {
         md5sum -b "${exe_path}" \
-        || log 'ERROR' 'Could not compute checksum for executable'
+            || log 'ERROR' 'Could not compute checksum for executable'
         "${exe_path}" --version \
-            || { log 'WARN' 'Could not query executable for version'; }
+            || log 'ERROR' 'Could not query executable for version'
     }
 
     # Force rebuild if ripgrep executable does not exist in default location

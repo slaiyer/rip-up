@@ -55,8 +55,12 @@ usage() {
         ["${nostrip_fmt}"]="${nostrip_msg}"
     )
 
-    printf '%s\n\n' "Update toolchain and build ${b}ripgrep${n} from source"
-    printf 'Usage:\n\t%s\n' "${b}$(basename -- "${0}")${n}"
+    printf '%s %s\n\n' \
+        "${d}Update toolchain" \
+        "and build ${b}ripgrep${n}${d} from source${n}"
+    printf '%s\n\t%s\n' \
+        "${d}Usage:${n}" \
+        "${b}$(basename -- "${0}")${n}"
 
     local text=''
     local key=''

@@ -29,7 +29,7 @@ usage() {
     local -r help_fmt="${sqo}-h${sqc}"
     local -r help_msg="${d}Print this help message${n}"
     order+=( "${help_fmt}" )
-    local -r verb_fmt="${sqo}-v 0${d}..${n}${u}2${n}${sqc}"
+    local -r verb_fmt="${sqo}-v 0${d}|${n}1${d}|${n}${u}2${n}${d}|${n}3${sqc}"
     local -r verb_msg="${d}Control output verbosity${n}"
     order+=( "${verb_fmt}" )
     local -r force_fmt="${sqo}-f${sqc}"
@@ -65,13 +65,13 @@ usage() {
     local key=''
     for idx in "${!order[@]}"; do
         key="${order["${idx}"]}"
-        text="${text}${key}|${prog_params[${key}]}"$'\n'
+        text="${text}${key}:${prog_params[${key}]}"$'\n'
     done
     unset -v idx
     local -r text
 
     printf '%s' "${text}" \
-        | column -t -s '|' \
+        | column -t -s ':' \
         | sed -u 's/^/\t\t/' 1>&2
 }
 
@@ -99,7 +99,7 @@ rust_update() {
         code="${pipe_status[idx]}"
         if (( "${code}" != 0 )); then
             log \
-                'INFO' \
+                'DEBUG' \
                 "rustup pipeline command #$(( idx + 1 )) exited with ${code}"
             return "${code}"
         fi
@@ -285,7 +285,7 @@ main() { # Parameters: [flags]
     shift "$(( OPTIND - 1 ))"
 
     # Fail as early as possible
-    log 'INFO' 'Checking prerequisites'
+    log 'DEBUG' 'Checking prerequisites'
 
     # Bash version check
     if [[ -z "${BASH_VERSION}" ]] \
@@ -297,7 +297,7 @@ main() { # Parameters: [flags]
     # Check for presence of folling executables in PATH
     require 'date' 'basename' 'md5sum' 'unbuffer' 'rustup' 'git' \
         'cargo' 'column' 'sed' 'strip' \
-            && log 'INFO' 'Requirements satisfied'
+            && log 'DEBUG' 'Requirements satisfied'
 
     # Enter specified directory
     cd "${git_dir}" \

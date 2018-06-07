@@ -17,7 +17,7 @@ Update toolchain and build ripgrep from source
 Usage:
 	rip-up
 		[-h]             Print this help message
-		[-v 0..2]        Control output verbosity
+		[-v 0|1|2|3]     Control output verbosity
 		[-f]             Force ripgrep rebuild
 		[-d <git_dir>]   Specify path to Git local directory
 		[-u <upstream>]  Specify Git upstream, e.g. 'origin/master'

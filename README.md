@@ -41,6 +41,7 @@ Usage:
     - basename
     - md5sum
     - tee
+    - chmod
 - bsdmainutils package
     - column
 - binutils package

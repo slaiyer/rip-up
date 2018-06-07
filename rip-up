@@ -133,9 +133,17 @@ ripgrep_rebuild() { # Parameters: exe_path, strip_bin
     local -r strip_bin="${2:-strip}"
     [[ "${strip_bin}" == 'strip' ]] \
         && {
-            log 'INFO' "Before:"$'\n'"$(show_exe "${exe_path}")"
+            log 'INFO' 'Before:'
+            show_exe "${exe_path}"
+
+            # Minimize ripgrep executable
             strip -p -s "${exe_path}"
-            log 'INFO' "After:"$'\n'"$(show_exe "${exe_path}")"
+
+            log 'INFO' 'After:'
+            show_exe "${exe_path}"
+
+            # Ensure ripgrep binary is executable
+            chmod u+x "${exe_path}"
         }
 }
 
@@ -305,12 +313,21 @@ main() { # Parameters: [flags]
         || { log 'ERROR' "Could not cd to ${git_dir_top}"; exit 1; }
     local -r exe_path="${git_dir_top}/target/release/rg"
 
-    # Compute ripgrep executable checksum and print build information
+    # Print information about reipgrep executable
     exe_version() {
+        # Compute ripgrep executable checksum
         md5sum -b "${exe_path}" \
-            || log 'ERROR' 'Could not compute checksum for executable'
+            || {
+                log 'ERROR' 'Could not compute checksum for executable'
+                exit 1
+            }
+
+        # Show build information from executable
         "${exe_path}" --version \
-            || log 'ERROR' 'Could not query executable for version'
+            || {
+                log 'ERROR' 'Could not query executable for version'
+                exit 1
+            }
     }
 
     # Force rebuild if ripgrep executable does not exist in default location

@@ -39,6 +39,7 @@ Usage:
 - coreutils package
     - env
     - basename
+    - md5sum
     - tee
 - bsdmainutils package
     - column

@@ -111,7 +111,7 @@ rust_update() {
 show_exe() { # Parameters: exe_path
     local -r exe_path="${1:-}"
     unbuffer ls -lF --color=always "${exe_path}" \
-        || log 'WARN' "Could not list ${exe_path} on filesystem"
+        || log 'ERROR' "Could not list ${exe_path} on filesystem"
 }
 
 # Pull fresh changes from ripgrep upstream, rebuild, and run tests
@@ -284,8 +284,8 @@ main() { # Parameters: [flags]
     fi
 
     # Check for presence of folling executables in PATH
-    require 'date' 'basename' 'unbuffer' 'rustup' 'git' 'cargo' \
-        'column' 'sed' 'strip' \
+    require 'date' 'basename' 'md5sum' 'unbuffer' 'rustup' 'git' \
+        'cargo' 'column' 'sed' 'strip' \
             && log 'INFO' 'Requirements satisfied'
 
     # Enter specified directory
@@ -305,10 +305,12 @@ main() { # Parameters: [flags]
         || { log 'ERROR' "Could not cd to ${git_dir_top}"; exit 1; }
     local -r exe_path="${git_dir_top}/target/release/rg"
 
-    # Invoke ripgrep exectuable for version information
+    # Compute ripgrep executable checksum and print build information
     exe_version() {
+        md5sum -b "${exe_path}" \
+        || log 'ERROR' 'Could not compute checksum for executable'
         "${exe_path}" --version \
-            || { log 'WARN' 'Could not query executable version'; }
+            || { log 'WARN' 'Could not query executable for version'; }
     }
 
     # Force rebuild if ripgrep executable does not exist in default location
@@ -342,6 +344,7 @@ main() { # Parameters: [flags]
     [[ "${force_build}" != 'force' ]] \
         && repo_check "${upstream}" \
             && (( ++reasons ))
+    local -r reasons
 
     # Try rebuilding ripgrep
     if (( reasons > 0 )); then

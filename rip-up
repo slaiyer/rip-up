@@ -80,18 +80,18 @@ rust_update() {
     log 'INFO' 'Checking for updates to Rust'
 
     # Duplicate stdout
-    exec 3>&1
+    exec {dupout}>&1
 
     # Copy rustup output to stdout before piping to grep
     unbuffer rustup update 2>&1 \
-        | tee /dev/fd/3 \
+        | tee "/dev/fd/${dupout}" \
         | grep -q -F 'updated'
 
     # Save pipe status codes
     local -ar pipe_status=( "${PIPESTATUS[@]}" )
 
     # Close duplicated file descriptor
-    exec 3>&-
+    exec {dupout}>&-
 
     # Return failure if any command in the pipeline failed
     local -i code=1
@@ -146,7 +146,7 @@ ripgrep_rebuild() { # Parameters: exe_path, strip_bin
             show_exe "${exe_path}"
 
             # Ensure ripgrep binary is executable
-            chmod u+x "${exe_path}"
+            chmod 0755 "${exe_path}"
         }
 }
 

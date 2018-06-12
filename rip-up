@@ -12,12 +12,17 @@
 set +o errexit
 
 # Source Bash utilities, if possible
-[[ -z "${HOME}" ]] \
-    && { "${HOME:?}"; exit 1; }
-declare -rx bash_utils="${HOME}/bin/bash_utils.sh"
-# shellcheck source=/home/slaiyer/bin/bash_utils.sh
-if [[ ! -e "${bash_utils}" ]] || ! . "${bash_utils}"; then
-    printf '[ERROR] Could not source %s\n' "${bash_utils}" 1>&2
+declare script_path
+script_path="$(dirname -- "${0}")"
+declare -r script_path
+declare -rx bash_utils="${script_path}/bash_utils.sh"
+if [[ ! -f "${bash_utils}" ]]; then
+    printf '[FATAL] Could not find %s\n' "${bash_utils}" 1>&2
+    exit 1
+fi
+# shellcheck source=./bash_utils.sh
+if ! . "${bash_utils}"; then
+    printf '[FATAL] Could not source %s\n' "${bash_utils}" 1>&2
     exit 1
 fi
 
@@ -71,9 +76,11 @@ usage() {
     unset -v idx
     local -r text
 
+    reset_fmt
     printf '%s' "${text}" \
         | column -t -s ':' \
-        | sed -u 's/^/\t\t/' 1>&2
+        | sed -u 's/^/\t\t/'
+    reset_fmt
 }
 
 # Update Rust, if possible

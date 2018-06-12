@@ -11,9 +11,8 @@ Check out the excellent [ripgrep](https://github.com/BurntSushi/ripgrep)
 
 # Installation
 - Clone repository
-- Ensure directory ~/bin exists
-- Ensure ~/bin is in PATH
-- Link rip-up and bash_utils.sh inside ~/bin
+- Link rip-up and bash_utils.sh inside the same directory
+- Ensure above directory is in PATH
 
 ## Usage
 ```

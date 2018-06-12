@@ -16,7 +16,7 @@ declare script_path
 script_path="$(dirname -- "${0}")"
 declare -r script_path
 declare -rx bash_utils="${script_path}/bash_utils.sh"
-if [[ ! -f "${bash_utils}" ]]; then
+if [[ ! -e "${bash_utils}" ]]; then
     printf '[FATAL] Could not find %s\n' "${bash_utils}" 1>&2
     exit 1
 fi
@@ -122,11 +122,12 @@ rust_update() {
 show_exe() { # Parameters: exe_path
     local -r exe_path="${1:-}"
     unbuffer ls -lF --color=always "${exe_path}" \
-        || log 'ERROR' "Could not list ${exe_path} on filesystem"
+        | column -t \
+            || log 'ERROR' "Could not list ${exe_path} on filesystem"
 }
 
 # Pull fresh changes from ripgrep upstream, rebuild, and run tests
-ripgrep_rebuild() { # Parameters: exe_path, strip_bin
+ripgrep_build() { # Parameters: exe_path, strip_bin
     local -r exe_path="${1:-}"
 
     log 'INFO' 'Building ripgrep'
@@ -343,6 +344,7 @@ main() { # Parameters: [flags]
 
     # Force rebuild if ripgrep executable does not exist in default location
     if [[ ! -f "${exe_path}" ]]; then
+        log 'DEBUG' "ripgrep executable not found at ${exe_path}"
         force_build='force'
     else
         log 'INFO' 'Existing executable'
@@ -376,7 +378,7 @@ main() { # Parameters: [flags]
 
     # Try rebuilding ripgrep
     if (( reasons > 0 )); then
-        ripgrep_rebuild "${exe_path}" "${strip_bin}"
+        ripgrep_build "${exe_path}" "${strip_bin}"
 
         log 'INFO' 'Built executable'
         exe_version "${exe_path}"

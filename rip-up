@@ -16,7 +16,7 @@ declare script_path
 script_path="$(dirname -- "${0}")"
 declare -r script_path
 declare -rx bash_utils="${script_path}/bash_utils.sh"
-if [[ ! -e "${bash_utils}" ]]; then
+if [[ ! -f "${bash_utils}" ]]; then
     printf '[FATAL] Could not find %s\n' "${bash_utils}" 1>&2
     exit 1
 fi

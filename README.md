@@ -22,12 +22,12 @@ Update toolchain and build ripgrep from source
 
 Usage:
 	rip-up
-		[-h]             Print this help message
-		[-v 0|1|2|3]     Control output verbosity
-		[-f]             Force ripgrep rebuild
-		[-d <git_dir>]   Specify path to Git local directory
-		[-u <upstream>]  Specify Git upstream, e.g. 'origin/master'
-		[-p]             Do not strip executable post build step
+		[-h]           Print this help message
+		[-v 0|1|2|3]   Control output verbosity
+		[-f]           Force ripgrep rebuild
+		[-d git_dir]   Specify path to Git local directory
+		[-u upstream]  Specify Git upstream, e.g. 'origin/master'
+		[-p]           Do not strip executable post build step
 ```
 
 ## Dependencies

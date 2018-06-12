@@ -342,8 +342,8 @@ main() { # Parameters: [flags]
             }
     }
 
-    # Force rebuild if ripgrep executable does not exist in default location
-    if [[ ! -f "${exe_path}" ]]; then
+    # Force building if ripgrep executable does not exist in default location
+    if [[ ! -x "${exe_path}" ]]; then
         log 'DEBUG' "ripgrep executable not found at ${exe_path}"
         force_build='force'
     else

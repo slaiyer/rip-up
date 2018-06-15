@@ -23,7 +23,7 @@ if [[ ! -f "${bash_utils}" ]]; then
     printf '[FATAL] Could not find %s\n' "${bash_utils}" 1>&2
     exit 1
 fi
-# shellcheck source=./bash_utils.sh
+# shellcheck source=./bash_utils/bash_utils.sh
 if ! . "${bash_utils}"; then
     printf '[FATAL] Could not source %s\n' "${bash_utils}" 1>&2
     exit 1

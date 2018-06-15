@@ -12,10 +12,13 @@
 set +o errexit
 
 # Source Bash utilities, if possible
-declare script_path
-script_path="$(dirname -- "${0}")"
-declare -r script_path
-declare -rx bash_utils="${script_path}/bash_utils.sh"
+declare script_dir
+if ! script_dir="$(dirname -- "$(readlink -e -- "${0}")")"; then
+    printf '[FATAL] Could not navigate to script directory' 1>&2
+    exit 1
+fi
+declare -r script_dir
+declare -rx bash_utils="${script_dir}/bash_utils/bash_utils.sh"
 if [[ ! -f "${bash_utils}" ]]; then
     printf '[FATAL] Could not find %s\n' "${bash_utils}" 1>&2
     exit 1
@@ -303,9 +306,9 @@ main() { # Parameters: [flags]
             exit 1
     fi
 
-    # Check for presence of folling executables in PATH
-    require 'date' 'basename' 'md5sum' 'unbuffer' 'rustup' 'git' \
-        'cargo' 'column' 'sed' 'strip' \
+    # Check for availability of required commands
+    require 'column' 'sed' 'tee' 'env' 'basename' 'md5sum' 'chmod' \
+        'unbuffer' 'rustup' 'grep' 'git' 'cargo' 'strip' \
             && log 'DEBUG' 'Requirements satisfied'
 
     # Enter specified directory
@@ -328,18 +331,16 @@ main() { # Parameters: [flags]
     # Print information about reipgrep executable
     exe_version() {
         # Compute ripgrep executable checksum
-        md5sum -b "${exe_path}" \
-            || {
-                log 'ERROR' 'Could not compute checksum for executable'
-                exit 1
-            }
+        if ! md5sum -b "${exe_path}"; then
+            log 'ERROR' 'Could not compute checksum for executable'
+            exit 1
+        fi
 
         # Show build information from executable
-        "${exe_path}" --version \
-            || {
-                log 'ERROR' 'Could not query executable for version'
-                exit 1
-            }
+        if ! "${exe_path}" --version; then
+            log 'ERROR' 'Could not query executable for version'
+            exit 1
+        fi
     }
 
     # Force building if ripgrep executable does not exist in default location

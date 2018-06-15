@@ -5,14 +5,9 @@ Check out the excellent [ripgrep](https://github.com/BurntSushi/ripgrep)
 ## Overview
 - Calls rustup
 - Pulls changes from ripgrep upstream
-- Rebuilds ripgrep (but only if required) with SIMD and AVX extensions
+- Builds ripgrep (if required) with SIMD and AVX extensions
 - Runs built-in tests
 - Strips built executable
-
-# Installation
-- Clone repository
-- Link rip-up and bash_utils.sh inside the same directory
-- Ensure above directory is in PATH
 
 ## Usage
 ```

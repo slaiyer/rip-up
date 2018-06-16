@@ -300,8 +300,9 @@ main() { # Parameters: [flags]
     log 'DEBUG' 'Checking prerequisites'
 
     # Bash version check
-    if [[ -z "${BASH_VERSION}" ]] \
-        || (( "${BASH_VERSION:0:1}" < 4 || "${BASH_VERSION:2:1}" < 4 )); then
+    if (( "${#BASH_VERSINFO[@]}" <= 0 )) \
+        || (( "${BASH_VERSINFO[0]}" < 4 )) \
+        || (( "${BASH_VERSINFO[0]}" == 4 && "${BASH_VERSINFO[1]}" < 4 )); then
             log 'ERROR' 'Minimum Bash version 4.4 required'
             exit 1
     fi

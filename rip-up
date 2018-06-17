@@ -329,6 +329,8 @@ main() { # Parameters: [flags]
         || { log 'ERROR' "Could not cd to ${git_dir_top}"; exit 1; }
     local -r exe_path="${git_dir_top}/target/release/rg"
 
+    log 'DEBUG' 'Checking for existing ripgrep executable'
+
     # Print information about reipgrep executable
     exe_version() {
         # Compute ripgrep executable checksum
@@ -346,7 +348,7 @@ main() { # Parameters: [flags]
 
     # Force building if ripgrep executable does not exist in default location
     if [[ ! -x "${exe_path}" ]]; then
-        log 'DEBUG' "ripgrep executable not found at ${exe_path}"
+        log 'DEBUG' "${exe_path} is not a riprep executable"
         force_build='force'
     else
         log 'INFO' 'Existing executable'
@@ -355,8 +357,10 @@ main() { # Parameters: [flags]
 
     local -i reasons=0
 
-    [[ "${force_build}" == 'force' ]] \
-        && (( ++reasons ))
+    if [[ "${force_build}" == 'force' ]]; then
+        log 'INFO' 'Enabling mandatory build step'
+        (( ++reasons ))
+    fi
 
     # Get ripgrep remote status
     log 'INFO' 'Checking with ripgrep remote for changes'

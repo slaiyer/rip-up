@@ -125,8 +125,7 @@ rust_update() {
 show_exe() { # Parameters: exe_path
     local -r exe_path="${1:-}"
     unbuffer ls -lF --color=always "${exe_path}" \
-        | column -t \
-            || log 'ERROR' "Could not list ${exe_path} on filesystem"
+        || log 'ERROR' "Could not list ${exe_path} on filesystem"
 }
 
 # Pull fresh changes from ripgrep upstream, rebuild, and run tests
@@ -180,7 +179,11 @@ repo_pull_rebase() { # Parameters: upstream
 
 # Check if upstream has changes
 repo_check() { # Parameters: upstream
-    log 'INFO' 'Checking ripgrep Git local against upstream'
+    log 'INFO' 'Checking with ripgrep remote for changes'
+
+    # Get ripgrep remote status
+    (( verbosity > 2 )) \
+        && git remote update
 
     local -r git_current_branch='@{0}'
     local git_upstream="${1:-@{u\}}"
@@ -362,19 +365,14 @@ main() { # Parameters: [flags]
         (( ++reasons ))
     fi
 
-    # Get ripgrep remote status
-    log 'INFO' 'Checking with ripgrep remote for changes'
-    (( verbosity > 1 )) \
-        && git remote update
+    # Try updating Rust
+    rust_update \
+        && (( ++reasons ))
 
     # Get upstream tracking name
     [[ "${upstream}" == '@{u}' ]] \
         && upstream="$(repo_resolve_upstream "${upstream}")"
     local -r upstream
-
-    # Try updating Rust
-    rust_update \
-        && (( ++reasons ))
 
     # Try pulling from ripgrep upstream, if required
     [[ "${force_build}" != 'force' ]] \

@@ -24,6 +24,11 @@ Usage:
 		[-p]           Do not strip executable post build step
 ```
 
+## Installation
+
+- Clone with `git clone --recurse-submodules`
+- Link top-level `rip-up` script into a directory in `PATH`
+
 ## Dependencies
 
 - bash (version 4.4+)

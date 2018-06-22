@@ -76,7 +76,6 @@ usage() {
         key="${order["${idx}"]}"
         text="${text}${key}:${prog_params[${key}]}"$'\n'
     done
-    unset -v idx
     local -r text
 
     reset_fmt
@@ -115,7 +114,6 @@ rust_update() {
             return "${code}"
         fi
     done
-    unset -v idx
 
     # Return success by default
     return 0
@@ -228,7 +226,6 @@ repo_check() { # Parameters: upstream
                 "${rebuild_opts[1]}") return 1 ;;
             esac
         done
-        unset -v want_rebuild
     else
         log 'ABORT' 'Git histories have diverged'
         exit 1
@@ -294,7 +291,6 @@ main() { # Parameters: [flags]
                 ;;
         esac
     done
-    unset -v flag
 
     # Move past flag arguments
     shift "$(( OPTIND - 1 ))"

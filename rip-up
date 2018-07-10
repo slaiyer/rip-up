@@ -213,7 +213,7 @@ repo_check() { # Parameters: upstream
         repo_pull_rebase "${git_upstream}" \
             && return 0
     elif [[ "${git_remote}" == "${git_base}" ]]; then
-        log 'WARN' 'Git local is ahead of remote'
+        log 'WARN' 'Git local is ahead of remote' 'force'
 
         # Leave choice with user
         local want_rebuild='Maybe'

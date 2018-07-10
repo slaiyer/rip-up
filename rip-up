@@ -141,22 +141,24 @@ ripgrep_build() { # Parameters: exe_path, strip_bin
 
     log 'INFO' 'Build successful' 'force'
 
-    log 'INFO' 'Stripping executable'
     local -r strip_bin="${2:-strip}"
     [[ "${strip_bin}" == 'strip' ]] \
         && {
+            log 'INFO' 'Stripping executable'
+
             log 'INFO' 'Before:'
             show_exe "${exe_path}"
 
             # Minimize ripgrep executable
             strip -p -s "${exe_path}"
 
-            log 'INFO' 'After:'
-            show_exe "${exe_path}"
-
             # Ensure ripgrep binary is executable
             chmod 0755 "${exe_path}"
+
+            log 'INFO' 'After:'
         }
+
+    show_exe "${exe_path}"
 }
 
 # Pull and rebase from upstream

@@ -122,7 +122,7 @@ rust_update() {
 # List ripgrep executable file information
 show_exe() { # Parameters: exe_path
     local -r exe_path="${1:-}"
-    unbuffer ls -lF --color=always "${exe_path}" \
+    unbuffer ls -lhF --color=always "${exe_path}" \
         || { log 'FATAL' "Could not list ${exe_path} on filesystem"; exit 1; }
 }
 

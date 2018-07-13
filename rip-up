@@ -42,7 +42,7 @@ usage() {
     local -r verb_msg="${d}Control output verbosity${n}"
     order+=( "${verb_fmt}" )
     local -r force_fmt="${sqo}${b}-f${n}${sqc}"
-    local -r force_msg="${d}Force ripgrep rebuild${n}"
+    local -r force_msg="${d}Force ripgrep build${n}"
     order+=( "${force_fmt}" )
     local -r src_fmt="${sqo}${b}-d${n} ${i}git_dir${n}${sqc}"
     local -r src_msg="${d}Specify path to Git local directory${n}"
@@ -123,7 +123,7 @@ rust_update() {
 show_exe() { # Parameters: exe_path
     local -r exe_path="${1:-}"
     unbuffer ls -lF --color=always "${exe_path}" \
-        || log 'ERROR' "Could not list ${exe_path} on filesystem"
+        || { log 'FATAL' "Could not list ${exe_path} on filesystem"; exit 1; }
 }
 
 # Pull fresh changes from ripgrep upstream, rebuild, and run tests
@@ -133,11 +133,11 @@ ripgrep_build() { # Parameters: exe_path, strip_bin
     log 'INFO' 'Building ripgrep'
     env RUSTFLAGS='-C target-cpu=native' \
         cargo build --release --features 'simd-accel avx-accel' \
-            || { log 'ERROR' 'Cargo build failed'; exit 1; }
+            || { log 'FATAL' 'Cargo build failed'; exit 1; }
 
     log 'INFO' 'Testing new build'
     cargo test --all \
-        || { log 'WARN' 'Cargo test failed'; exit 1; }
+        || { log 'FATAL' 'Cargo test failed'; exit 1; }
 
     log 'INFO' 'Build successful' 'force'
 
@@ -150,10 +150,12 @@ ripgrep_build() { # Parameters: exe_path, strip_bin
             show_exe "${exe_path}"
 
             # Minimize ripgrep executable
-            strip -p -s "${exe_path}"
+            strip -p -s "${exe_path}" \
+                || log 'ERROR' "Could not strip ${exe_path}"
 
             # Ensure ripgrep binary is executable
-            chmod 0755 "${exe_path}"
+            chmod 0755 "${exe_path}" \
+                || log 'ERROR' "Could not change permissions for ${exe_path}"
 
             log 'INFO' 'After:'
         }
@@ -174,7 +176,7 @@ repo_pull_rebase() { # Parameters: upstream
     local -r upstream_split
 
     git pull "${upstream_split[@]}" --rebase \
-        || { log 'ERROR' 'Git pull failed'; exit 1; }
+        || { log 'FATAL' 'Git pull failed'; exit 1; }
 }
 
 # Check if upstream has changes
@@ -270,8 +272,11 @@ main() { # Parameters: [flags]
                 ;;
             v)
                 verbosity="${OPTARG}"
-                [[ ! "${verbosity}" =~ ^[0-9]$ ]] \
-                    && { usage; exit 1; }
+                if [[ ! "${verbosity}" =~ ^[0-9]$ ]]; then
+                    log 'FATAL' "Invalid verbosity level: ${verbosity}"
+                    usage
+                    exit 1
+                fi
                 ;;
             f)
                 force_build='force'
@@ -288,6 +293,7 @@ main() { # Parameters: [flags]
                 local -r strip_bin
                 ;;
             *)
+                log 'FATAL' "Invalid flag: ${flag}"
                 usage
                 exit 1
                 ;;
@@ -304,7 +310,7 @@ main() { # Parameters: [flags]
     if (( "${#BASH_VERSINFO[@]}" <= 0 )) \
         || (( "${BASH_VERSINFO[0]}" < 4 )) \
         || (( "${BASH_VERSINFO[0]}" == 4 && "${BASH_VERSINFO[1]}" < 4 )); then
-            log 'ERROR' 'Minimum Bash version 4.4 required'
+            log 'FATAL' 'Minimum Bash version 4.4 required'
             exit 1
     fi
 
@@ -315,7 +321,7 @@ main() { # Parameters: [flags]
 
     # Enter specified directory
     cd "${git_dir}" \
-        || { log 'ERROR' "Could not cd to ${git_dir}"; exit 1; }
+        || { log 'FATAL' "Could not cd to ${git_dir}"; exit 1; }
 
     # Navigate to ripgrep Git root directory
     local git_dir_top
@@ -323,7 +329,7 @@ main() { # Parameters: [flags]
     local -r git_dir_top
 
     if [[ "$(basename -- "${git_dir_top}")" != 'ripgrep' ]]; then
-        log 'ERROR' "${git_dir} is not within local ripgrep Git tree"
+        log 'FATAL' "${git_dir} is not within local ripgrep Git tree"
         exit 1
     fi
     cd "${git_dir_top}" \
@@ -336,13 +342,13 @@ main() { # Parameters: [flags]
     exe_version() {
         # Compute ripgrep executable checksum
         if ! md5sum -b "${exe_path}"; then
-            log 'ERROR' 'Could not compute checksum for executable'
+            log 'FATAL' 'Could not compute checksum for executable'
             exit 1
         fi
 
         # Show build information from executable
         if ! "${exe_path}" --version; then
-            log 'ERROR' 'Could not query executable for version'
+            log 'FATAL' 'Could not query executable for version'
             exit 1
         fi
     }
@@ -385,7 +391,7 @@ main() { # Parameters: [flags]
         log 'INFO' 'Built executable'
         exe_version "${exe_path}"
     else
-        log 'INFO' 'ripgrep rebuild not required' 'force'
+        log 'INFO' 'ripgrep build not required' 'force'
     fi
 }
 

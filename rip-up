@@ -5,6 +5,10 @@
 
 ################################################################################
 
+# Print separator if a TTY is not connected
+[[ ! -t 1 ]] \
+    && printf '\n===\n'
+
 # # Trace live execution
 # set -o xtrace
 

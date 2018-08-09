@@ -154,8 +154,10 @@ ripgrep_build() { # Parameters: exe_path, strip_bin
             show_exe "${exe_path}"
 
             # Minimize ripgrep executable
-            strip -p -s "${exe_path}" \
-                || log 'ERROR' "Could not strip ${exe_path}"
+            # TODO: Fix hackaround for macOS
+            strip -p -s "${exe_path}" 2>/dev/null \
+                || strip "${exe_path}" \
+                    || log 'ERROR' "Could not strip ${exe_path}"
 
             # Ensure ripgrep binary is executable
             chmod 0755 "${exe_path}" \

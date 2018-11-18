@@ -354,8 +354,7 @@ main() { # Parameters: [flags]
 
         # Show build information from executable
         if ! "${exe_path}" --version; then
-            log 'FATAL' 'Could not query executable for version'
-            exit 1
+            log 'ERROR' 'Could not query executable for version'
         fi
     }
 

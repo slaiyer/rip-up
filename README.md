@@ -39,15 +39,12 @@ Usage:
 - git
 - grep
 - sed
-- expect package
-    - unbuffer
-- coreutils package
-    - env
-    - basename
-    - md5sum
-    - tee
-    - chmod
-- bsdmainutils package
-    - column
-- binutils package
-    - strip
+- unbuffer
+- env
+- basename
+- md5sum
+- tee
+- chmod
+- column
+- strip
+

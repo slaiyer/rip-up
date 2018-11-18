@@ -39,23 +39,23 @@ fi
 usage() {
     local -a order
     local -r help_fmt="${sqo}${b}-h${n}${sqc}"
-    local -r help_msg="${d}Print this help message${n}"
+    local -r help_msg="Print this help message"
     order+=( "${help_fmt}" )
     local -r verb_lvls="0${d}|${n}1${d}|${n}${u}2${n}${d}|${n}3${sqc}"
     local -r verb_fmt="${sqo}${b}-v${n} ${verb_lvls}"
-    local -r verb_msg="${d}Control output verbosity${n}"
+    local -r verb_msg="Control output verbosity"
     order+=( "${verb_fmt}" )
     local -r force_fmt="${sqo}${b}-f${n}${sqc}"
-    local -r force_msg="${d}Force ripgrep build${n}"
+    local -r force_msg="Force ripgrep build"
     order+=( "${force_fmt}" )
     local -r src_fmt="${sqo}${b}-d${n} ${i}git_dir${n}${sqc}"
-    local -r src_msg="${d}Specify path to Git local directory${n}"
+    local -r src_msg="Specify path to Git local directory"
     order+=( "${src_fmt}" )
     local -r upstream_fmt="${sqo}${b}-u${n} ${i}upstream${n}${sqc}"
-    local -r upstream_msg="${d}Specify Git upstream, e.g. 'origin/master'${n}"
+    local -r upstream_msg="Specify Git upstream, e.g. 'origin/master'"
     order+=( "${upstream_fmt}" )
     local -r nostrip_fmt="${sqo}${b}-p${n}${sqc}"
-    local -r nostrip_msg="${d}Do not strip executable post build step${n}"
+    local -r nostrip_msg="Do not strip executable post build step"
     order+=( "${nostrip_fmt}" )
     local -r order
 
@@ -68,10 +68,11 @@ usage() {
         ["${nostrip_fmt}"]="${nostrip_msg}"
     )
 
+    reset_fmt
     printf '%s\n\n' \
-        "${d}Update toolchain and build ${b}ripgrep${n}${d} from source${n}"
+        "Update toolchain and build ${b}ripgrep${n} from source"
     printf '%s\n\t%s\n' \
-        "${d}Usage:${n}" \
+        "Usage:" \
         "${b}$(basename -- "${0}")${n}"
 
     local text=''
